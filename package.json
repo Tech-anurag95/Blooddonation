@@ -1,0 +1,15 @@
+{
+  "name": "blooddonation-app",
+  "version": "1.0.0",
+  "description": "A full-fledged web application for blood donation with geolocation-based donor search",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"cd client && npm start\" \"cd server && npm run dev\"",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

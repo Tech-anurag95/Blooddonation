@@ -1,0 +1,6 @@
+Django>=4.2
+djangorestframework>=3.14
+djangorestframework-simplejwt>=2.8
+django-cors-headers>=4.0
+pywebpush>=1.13
+psycopg2-binary>=2.9  # optional if you use PostgreSQL
