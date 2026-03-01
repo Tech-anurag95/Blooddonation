@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { donorAPI } from '../services/api';
 
 const FindDonors = () => {
+  const navigate = useNavigate();
   const [selectedBloodType, setSelectedBloodType] = useState('O+');
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,10 +17,11 @@ const FindDonors = () => {
     setError('');
     try {
       const response = await donorAPI.getNearbyDonors(selectedBloodType);
-      setDonors(response.data.data || []);
+      const donorData = response.data.data || response.data || [];
+      setDonors(donorData);
     } catch (err) {
       setError('Failed to fetch donors');
-      console.error(err);
+      console.error('Fetch donors error:', err);
     } finally {
       setLoading(false);
     }
@@ -30,6 +33,11 @@ const FindDonors = () => {
 
   const handleContactDonor = (donorId) => {
     alert(`Contacted donor with ID: ${donorId}`);
+  };
+
+  const handleMessageDonor = (donorId) => {
+    // Redirect to matches page where users can see their active matches and chat
+    navigate('/matches');
   };
 
   return (
@@ -75,12 +83,12 @@ const FindDonors = () => {
             </div>
           ) : donors.length > 0 ? (
             donors.map(donor => (
-              <div key={donor._id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
+              <div key={donor.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   {/* Donor Info */}
                   <div className="flex-grow">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-xl font-bold text-gray-900">{donor.name}</h3>
+                      <h3 className="text-xl font-bold text-gray-900">{donor.username || donor.name || 'Anonymous'}</h3>
                       {donor.verified && (
                         <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
                           ✓ Verified
@@ -90,26 +98,29 @@ const FindDonors = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-red-600">{donor.bloodType}</span>
+                        <span className="text-2xl font-bold text-red-600">{donor.blood_type || donor.bloodType}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin size={18} className="text-red-600" />
-                        <span>{donor.city}</span>
+                        <span>{donor.city || 'Unknown'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Heart size={18} className="text-red-600" />
-                        <span>{donor.lastDonation ? new Date(donor.lastDonation).toLocaleDateString() : 'Never'}</span>
+                        <span>{donor.last_donation_date ? new Date(donor.last_donation_date).toLocaleDateString() : 'Never'}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
                   <div className="flex gap-3">
-                    <button className="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-600 transition">
-                      Message
+                    <button 
+                      onClick={() => handleMessageDonor(donor.id)}
+                      className="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-600 transition"
+                    >
+                      View Matches
                     </button>
                     <button
-                      onClick={() => handleContactDonor(donor._id)}
+                      onClick={() => handleContactDonor(donor.id)}
                       className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition"
                     >
                       Request Blood

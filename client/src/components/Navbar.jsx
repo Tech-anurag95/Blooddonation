@@ -23,18 +23,22 @@ const Navbar = ({ isAuthenticated, userRole, onLogout }) => {
 
           {/* Navigation Links */}
           <div className="hidden md:flex space-x-6">
-            <Link to="/rules" className="hover:text-red-100 transition">Rules</Link>
-            <Link to="/instructions" className="hover:text-red-100 transition">Instructions</Link>
-            <Link to="/faq" className="hover:text-red-100 transition">FAQ</Link>
-            <Link to="/privacy" className="hover:text-red-100 transition">Privacy</Link>
-            <Link to="/terms" className="hover:text-red-100 transition">Terms</Link>
             {isAuthenticated ? (
               <>
+                <Link to="/blood-requests" className="hover:text-red-100 transition">
+                  Blood Requests
+                </Link>
                 <Link to="/find-donors" className="hover:text-red-100 transition">
                   Find Donors
                 </Link>
                 <Link to="/request-blood" className="hover:text-red-100 transition">
                   Request Blood
+                </Link>
+                <Link to="/matches" className="hover:text-red-100 transition">
+                  Matches
+                </Link>
+                <Link to="/rewards" className="hover:text-red-100 transition">
+                  Rewards
                 </Link>
                 {userRole === 'donor' && (
                   <Link to="/dashboard" className="hover:text-red-100 transition">
@@ -56,6 +60,7 @@ const Navbar = ({ isAuthenticated, userRole, onLogout }) => {
                 >
                   <FiLogOut /> <span>Logout</span>
                 </button>
+                <Link to="/privacy-terms" className="hover:text-red-100 transition">Privacy & Terms</Link>
               </>
             ) : (
               <>
@@ -65,6 +70,7 @@ const Navbar = ({ isAuthenticated, userRole, onLogout }) => {
                 <Link to="/register" className="bg-white text-red-600 px-4 py-2 rounded hover:bg-red-50 transition">
                   Register
                 </Link>
+                <Link to="/privacy-terms" className="hover:text-red-100 transition">Privacy & Terms</Link>
               </>
             )}
           </div>

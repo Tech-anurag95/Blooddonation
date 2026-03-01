@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User, Save } from 'lucide-react';
+import { User, Save, Camera } from 'lucide-react';
 import { userAPI } from '../services/api';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,11 +28,33 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const userId = localStorage.getItem('userId');
-      const response = await userAPI.getProfile(userId);
-      setFormData(response.data.data);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please log in to view your profile');
+        return;
+      }
+      const response = await userAPI.getProfile();
+      const userData = response.data;
+      setFormData({
+        name: userData.username || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        bloodType: userData.blood_type || 'O+',
+        city: userData.city || '',
+        state: '',
+        age: userData.age || '',
+        weight: userData.weight || '',
+        lastDonation: userData.last_donation_date || '',
+        available: userData.is_available_to_donate !== false
+      });
+      
+      // Set profile picture if exists
+      if (userData.profile_picture) {
+        setProfilePicturePreview(userData.profile_picture);
+      }
     } catch (err) {
-      setError('Failed to load profile');
+      console.error('Profile fetch error:', err);
+      setError('Failed to load profile. Please try logging in again.');
     }
   };
 
@@ -42,17 +66,61 @@ const Profile = () => {
     });
   };
 
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image file size cannot exceed 5MB');
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Only JPEG, PNG, and GIF images are allowed');
+        return;
+      }
+
+      setProfilePicture(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePicturePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setError('');
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setError('');
     try {
-      const userId = localStorage.getItem('userId');
-      await userAPI.updateProfile(userId, formData);
+      const formDataToSend = new FormData();
+      formDataToSend.append('username', formData.name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('blood_type', formData.bloodType);
+      formDataToSend.append('city', formData.city);
+      if (formData.age) formDataToSend.append('age', parseInt(formData.age));
+      if (formData.weight) formDataToSend.append('weight', parseFloat(formData.weight));
+      
+      // Add profile picture if changed
+      if (profilePicture) {
+        formDataToSend.append('profile_picture', profilePicture);
+      }
+
+      await userAPI.updateProfile(null, formDataToSend);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       setIsEditing(false);
+      setProfilePicture(null); // Clear the file input
+      fetchProfile(); // Refresh profile data
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save profile');
+      console.error('Save error:', err);
+      setError(err.response?.data?.message || err.response?.data?.detail || 'Failed to save profile');
     } finally {
       setLoading(false);
     }
@@ -100,11 +168,36 @@ const Profile = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Left Side - Avatar */}
             <div className="flex flex-col items-center">
-              <div className="w-32 h-32 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <User size={80} className="text-red-600" />
+              <div className="relative group">
+                <div className="w-32 h-32 bg-red-100 rounded-full flex items-center justify-center mb-4 overflow-hidden border-4 border-white shadow-lg">
+                  {profilePicturePreview ? (
+                    <img 
+                      src={profilePicturePreview} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User size={80} className="text-red-600" />
+                  )}
+                </div>
+                {isEditing && (
+                  <label 
+                    htmlFor="profile-picture-upload" 
+                    className="absolute bottom-4 right-0 bg-red-600 text-white p-2 rounded-full cursor-pointer hover:bg-red-700 transition-all shadow-lg group-hover:scale-110"
+                  >
+                    <Camera size={20} />
+                    <input
+                      id="profile-picture-upload"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif"
+                      onChange={handleProfilePictureChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">{formData.name}</h2>
-              <p className="text-gray-600 mt-1">Blood Type: <span className="font-bold text-red-600">{formData.bloodType}</span></p>
+              <h2 className="text-2xl font-bold text-gray-900">{formData.name || 'User'}</h2>
+              <p className="text-gray-600 mt-1">Blood Type: <span className="font-bold text-red-600">{formData.bloodType || 'Not set'}</span></p>
               {formData.available && (
                 <div className="mt-4 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-bold">
                   ✓ Available to Donate

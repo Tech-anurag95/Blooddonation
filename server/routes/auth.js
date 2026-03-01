@@ -55,6 +55,49 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/create-admin
+// @desc    Create first admin user (only if no admin exists)
+// @access  Public
+router.post('/create-admin', async (req, res) => {
+  try {
+    // Check if any admin already exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (adminExists) {
+      return res.status(400).json({ success: false, message: 'Admin already exists' });
+    }
+
+    const { name, email, password } = req.body;
+
+    // Create admin user
+    const admin = new User({
+      name: name || 'Admin',
+      email: email || 'admin@blooddonation.com',
+      password: password || 'admin123',
+      role: 'admin',
+      verified: true,
+      bloodType: 'O+',
+      city: 'Admin City'
+    });
+
+    await admin.save();
+    const token = generateToken(admin._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin user created successfully',
+      token,
+      user: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public

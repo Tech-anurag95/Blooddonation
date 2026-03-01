@@ -8,20 +8,43 @@ import Register from './pages/Register';
 import DonorDashboard from './pages/DonorDashboard';
 import RequestBlood from './pages/RequestBlood';
 import FindDonors from './pages/FindDonors';
+import BloodRequests from './pages/BloodRequests';
 import Profile from './pages/Profile';
-import Rules from './pages/Rules';
-import Instructions from './pages/Instructions';
-import FAQ from './pages/FAQ';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
+import Chat from './pages/Chat';
+import Matches from './pages/Matches';
+import PrivacyAndTerms from './pages/PrivacyAndTerms';
 import VerifyAccount from './pages/VerifyAccount';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAudit from './pages/AdminAudit';
+import AdminDataManagement from './pages/AdminDataManagement';
+import TestAPI from './pages/TestAPI';
+import RewardsDashboard from './pages/RewardsDashboard';
+import UploadCertificate from './pages/UploadCertificate';
 import './styles/App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || null);
+
+  // Check authentication on mount and when localStorage changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('userRole');
+      setIsAuthenticated(!!token);
+      setUserRole(role);
+    };
+
+    // Check on mount
+    checkAuth();
+
+    // Listen for storage changes (e.g., login in another tab)
+    window.addEventListener('storage', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
 
   const handleLogin = (token, role) => {
     localStorage.setItem('token', token);
@@ -33,6 +56,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
     setIsAuthenticated(false);
     setUserRole(null);
   };
@@ -63,23 +87,26 @@ function App() {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/rules" element={<Rules />} />
-            <Route path="/instructions" element={<Instructions />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy-terms" element={<PrivacyAndTerms />} />
             <Route path="/verify" element={<VerifyAccount />} />
+            <Route path="/test-api" element={<TestAPI />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/audit" element={<AdminAudit />} />
+            <Route path="/admin/data" element={<AdminDataManagement />} />
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/register" element={<Register onLogin={handleLogin} />} />
             
             {isAuthenticated ? (
               <>
+                <Route path="/blood-requests" element={<BloodRequests />} />
                 <Route path="/dashboard" element={<DonorDashboard />} />
                 <Route path="/request-blood" element={<RequestBlood />} />
                 <Route path="/find-donors" element={<FindDonors />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/matches" element={<Matches />} />
+                <Route path="/chat/:matchId" element={<Chat />} />
+                <Route path="/rewards" element={<RewardsDashboard />} />
+                <Route path="/upload-certificate" element={<UploadCertificate />} />
               </>
             ) : (
               <Route path="*" element={<Navigate to="/" />} />

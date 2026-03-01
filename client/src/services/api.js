@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+import { API_BASE_URL } from '../config/api.config';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -47,32 +46,75 @@ export const authAPI = {
 
 // Donor API calls
 export const donorAPI = {
-  getAllDonors: () => api.get('/donors'),
-  getNearbyDonors: (bloodType, latitude, longitude, radius) =>
-    api.get('/donors/nearby', { params: { bloodType, latitude, longitude, radius } }),
-  getDonorById: (id) => api.get(`/donors/${id}`),
-  registerAsDonor: (donorData) => api.post('/donors/register', donorData),
-  updateDonorProfile: (id, donorData) => api.put(`/donors/${id}`, donorData),
-  getDonationHistory: (donorId) => api.get(`/donors/${donorId}/donations`),
-  acceptRequest: (requestId, donorId) => api.post(`/donors/accept-request`, { requestId, donorId })
+  getAllDonors: () => api.get('/users/?role=donor'),
+  getNearbyDonors: async (bloodType, latitude, longitude, radius) => {
+    try {
+      const response = await api.get('/users/', { 
+        params: { blood_type: bloodType } 
+      });
+      return { data: { success: true, data: response.data } };
+    } catch (error) {
+      return { data: { success: false, data: [] } };
+    }
+  },
+  getDonorById: (id) => api.get(`/users/${id}/`),
+  registerAsDonor: (donorData) => api.post('/users/', donorData),
+  updateDonorProfile: (id, donorData) => api.put(`/users/${id}/`, donorData),
+  getDonationHistory: async (donorId) => {
+    try {
+      const response = await api.get('/requests/', { 
+        params: { requester: donorId } 
+      });
+      return { data: { success: true, data: response.data } };
+    } catch (error) {
+      return { data: { success: false, data: [] } };
+    }
+  },
+  acceptRequest: async (requestId, donorId) => {
+    try {
+      const response = await api.put(`/requests/${requestId}/`, { 
+        status: 'matched' 
+      });
+      return { data: { success: true, data: response.data } };
+    } catch (error) {
+      throw error;
+    }
+  }
 };
 
 // Blood Request API calls
 export const requestAPI = {
-  getAllRequests: () => api.get('/requests'),
-  getPendingRequests: () => api.get('/requests/pending'),
-  getRequestById: (id) => api.get(`/requests/${id}`),
-  createRequest: (requestData) => api.post('/requests', requestData),
-  updateRequest: (id, requestData) => api.put(`/requests/${id}`, requestData),
-  deleteRequest: (id) => api.delete(`/requests/${id}`),
-  getRequestsByUser: (userId) => api.get(`/requests/user/${userId}`)
+  getAllRequests: () => api.get('/requests/'),
+  getPendingRequests: () => api.get('/requests/?status=pending'),
+  getRequestById: (id) => api.get(`/requests/${id}/`),
+  createRequest: async (requestData) => {
+    try {
+      const response = await api.post('/requests/', requestData);
+      return { data: { success: true, data: response.data } };
+    } catch (error) {
+      throw error;
+    }
+  },
+  updateRequest: (id, requestData) => api.put(`/requests/${id}/`, requestData),
+  deleteRequest: (id) => api.delete(`/requests/${id}/`),
+  getRequestsByUser: (userId) => api.get(`/requests/?requester=${userId}`)
 };
 
 // User Profile API calls
 export const userAPI = {
-  getProfile: (userId) => api.get(`/users/${userId}`),
-  updateProfile: (userId, profileData) => api.put(`/users/${userId}`, profileData),
-  deleteAccount: (userId) => api.delete(`/users/${userId}`)
+  getProfile: (userId) => api.get(`/users/me/`),
+  updateProfile: (userId, profileData) => {
+    // Check if profileData is FormData
+    if (profileData instanceof FormData) {
+      return api.patch(`/users/me/`, profileData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+    }
+    return api.put(`/users/me/`, profileData);
+  },
+  deleteAccount: (userId) => api.delete(`/users/${userId}/`)
 };
 
 // Verification & admin actions
@@ -87,3 +129,53 @@ export const pushAPI = {
 };
 
 export default api;
+
+
+// Matching API calls
+export const matchAPI = {
+  createMatch: (requestId) => api.post('/matches/', { request_id: requestId }),
+  getMatches: () => api.get('/matches/'),
+  getMatch: (id) => api.get(`/matches/${id}/`),
+  completeMatch: (id) => api.post(`/matches/${id}/complete/`),
+  cancelMatch: (id, reason) => api.post(`/matches/${id}/cancel/`, { reason }),
+  rateMatch: (id, rating, feedback) => api.post(`/matches/${id}/rate/`, { rating, feedback })
+};
+
+// Messaging API calls
+export const messageAPI = {
+  getMessages: (matchId) => api.get(`/messages/?match_id=${matchId}`),
+  sendMessage: (matchId, content) => api.post('/messages/', { match_id: matchId, content }),
+  markAsRead: (messageId) => api.post(`/messages/${messageId}/mark_read/`),
+  getUnreadCount: () => api.get('/messages/unread_count/')
+};
+
+
+// Certificate API calls
+export const certificateAPI = {
+  getMyCertificates: () => api.get('/certificates/my_certificates/'),
+  getAllCertificates: (status) => {
+    const params = status ? `?status=${status}` : '';
+    return api.get(`/certificates/${params}`);
+  },
+  getPendingCertificates: () => api.get('/certificates/pending/'),
+  uploadCertificate: (formData) => {
+    return api.post('/certificates/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+  approveCertificate: (id) => api.post(`/certificates/${id}/approve/`),
+  rejectCertificate: (id, reason) => api.post(`/certificates/${id}/reject/`, { 
+    action: 'reject',
+    rejection_reason: reason 
+  }),
+  getCertificate: (id) => api.get(`/certificates/${id}/`)
+};
+
+// Rewards API calls
+export const rewardsAPI = {
+  getMyRewards: () => api.get('/rewards/my_rewards/'),
+  getAllRewards: () => api.get('/rewards/'),
+  useCredit: () => api.post('/rewards/use_credit/')
+};
