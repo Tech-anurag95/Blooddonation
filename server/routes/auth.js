@@ -5,6 +5,7 @@ const User = require('../models/User');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const authMiddleware = require('../middleware/auth');
+const djangoSync = require('../utils/djangoSync');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -38,6 +39,8 @@ router.post('/register', async (req, res) => {
     });
 
     await user.save();
+    // Sync new user to Django SQLite
+    djangoSync.user(user);
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -123,6 +126,9 @@ router.post('/login', async (req, res) => {
     }
 
     const token = generateToken(user._id);
+
+    // Sync on login to keep Django mongo_id up-to-date (important for in-memory MongoDB)
+    djangoSync.user(user);
 
     res.status(200).json({
       success: true,

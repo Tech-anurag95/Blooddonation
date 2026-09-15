@@ -68,6 +68,13 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
+userSchema.virtual('username').get(function() {
+  return this.name;
+});
+
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     next();

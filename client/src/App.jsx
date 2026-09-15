@@ -17,6 +17,7 @@ import VerifyAccount from './pages/VerifyAccount';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAudit from './pages/AdminAudit';
 import AdminDataManagement from './pages/AdminDataManagement';
+import AdminUserManagement from './pages/AdminUserManagement';
 import TestAPI from './pages/TestAPI';
 import RewardsDashboard from './pages/RewardsDashboard';
 import UploadCertificate from './pages/UploadCertificate';
@@ -93,6 +94,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/audit" element={<AdminAudit />} />
             <Route path="/admin/data" element={<AdminDataManagement />} />
+            <Route path="/admin/users" element={<AdminUserManagement />} />
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/register" element={<Register onLogin={handleLogin} />} />
             

@@ -19,6 +19,15 @@ const donationSchema = new mongoose.Schema({
     enum: ['accepted', 'scheduled', 'completed', 'cancelled'],
     default: 'accepted'
   },
+  certificateStatus: {
+    type: String,
+    enum: ['not_requested', 'pending_review', 'approved', 'rejected'],
+    default: 'not_requested'
+  },
+  certificateRejectionReason: {
+    type: String,
+    default: ''
+  },
   scheduledDate: Date,
   date: {
     type: Date,

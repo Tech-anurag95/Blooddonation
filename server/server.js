@@ -11,6 +11,12 @@ const donorRoutes = require('./routes/donors');
 const requestRoutes = require('./routes/requests');
 const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
+const matchRoutes = require('./routes/matches');
+const messageRoutes = require('./routes/messages');
+const donationRoutes      = require('./routes/donations');
+const certificateRoutes   = require('./routes/certificates');
+
+const seedDefaultUsers = require('./utils/seedUser');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,6 +26,8 @@ const io = socketIo(server, {
     credentials: true
   }
 });
+
+app.set('io', io);
 
 const path = require('path');
 
@@ -40,6 +48,7 @@ const connectWithFallback = async () => {
       useUnifiedTopology: true
     });
     console.log('✓ MongoDB connected successfully');
+    await seedDefaultUsers();
   } catch (err) {
     console.error('✗ MongoDB connection failed:', err.message || err);
 
@@ -53,6 +62,7 @@ const connectWithFallback = async () => {
           useUnifiedTopology: true
         });
         console.log('✓ Connected to in-memory MongoDB for development');
+        await seedDefaultUsers();
       } catch (memErr) {
         console.error('✗ In-memory MongoDB failed to start:', memErr);
       }
@@ -68,6 +78,10 @@ app.use('/api/donors', donorRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use(['/api/matches', '/api/match'], matchRoutes);
+app.use(['/api/messages', '/api/message'], messageRoutes);
+app.use('/api/donations',     donationRoutes);
+app.use('/api/certificates',  certificateRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

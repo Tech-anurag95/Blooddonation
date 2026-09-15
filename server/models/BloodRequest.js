@@ -31,13 +31,14 @@ const bloodRequestSchema = new mongoose.Schema({
   longitude: Number,
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'completed', 'cancelled'],
+    enum: ['pending', 'matched', 'completed', 'cancelled'],
     default: 'pending'
   },
   acceptedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  donorName: String,
   createdAt: {
     type: Date,
     default: Date.now

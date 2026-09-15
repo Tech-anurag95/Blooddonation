@@ -49,7 +49,11 @@ const Navbar = ({ isAuthenticated, userRole, onLogout }) => {
                   <Link to="/verify" className="hover:text-red-100 transition">Verify Account</Link>
                 )}
                 {userRole === 'admin' && (
-                  <Link to="/admin" className="hover:text-red-100 transition">Admin</Link>
+                  <div className="flex space-x-2 items-center">
+                    <Link to="/admin" className="hover:text-red-100 transition">Admin</Link>
+                    <div className="text-red-200">|</div>
+                    <Link to="/admin/users" className="hover:text-red-100 transition">Users</Link>
+                  </div>
                 )}
                 <Link to="/profile" className="hover:text-red-100 transition flex items-center space-x-1">
                   <FiUser /> <span>Profile</span>

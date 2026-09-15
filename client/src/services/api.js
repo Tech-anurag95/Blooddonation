@@ -23,25 +23,25 @@ api.interceptors.request.use(
 
 // Auth API calls
 export const authAPI = {
-  register: (userData) => api.post('/auth/register/', userData),
+  register: (userData) => api.post('/auth/register', userData),
   login: async (email, password) => {
-    // Send explicit 'email' and 'password' to Django login endpoint.
-    const resp = await api.post('/auth/login/', { email, password });
-    // resp.data should contain 'access' token
-    const token = resp.data.access || resp.data.token;
+    const resp = await api.post('/auth/login', { email, password });
+    const token = resp.data.token || resp.data.access;
     if (token) {
-      // store token temporarily and fetch user profile
       localStorage.setItem('token', token);
       try {
-        const me = await api.get('/users/me/');
-        return { data: { success: true, token, user: me.data } };
+        const me = await api.get('/users/me');
+        const user = me.data?.data || me.data;
+        // Save blood type so BloodRequests page can use it for matching
+        if (user?.bloodType) localStorage.setItem('userBloodType', user.bloodType);
+        return { data: { success: true, token, user } };
       } catch (err) {
         return { data: { success: true, token, user: null } };
       }
     }
     return resp;
   },
-  getCurrentUser: () => api.get('/users/me/')
+  getCurrentUser: () => api.get('/users/me')
 };
 
 // Donor API calls
@@ -62,10 +62,8 @@ export const donorAPI = {
   updateDonorProfile: (id, donorData) => api.put(`/users/${id}/`, donorData),
   getDonationHistory: async (donorId) => {
     try {
-      const response = await api.get('/requests/', { 
-        params: { requester: donorId } 
-      });
-      return { data: { success: true, data: response.data } };
+      const response = await api.get('/donations');
+      return { data: { success: true, data: response.data.data || [] } };
     } catch (error) {
       return { data: { success: false, data: [] } };
     }
@@ -102,19 +100,16 @@ export const requestAPI = {
 
 // User Profile API calls
 export const userAPI = {
-  getProfile: (userId) => api.get(`/users/me/`),
+  getProfile: () => api.get('/users/me'),
   updateProfile: (userId, profileData) => {
-    // Check if profileData is FormData
     if (profileData instanceof FormData) {
-      return api.patch(`/users/me/`, profileData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      return api.patch('/users/me', profileData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
     }
-    return api.put(`/users/me/`, profileData);
+    return api.put('/users/me', profileData);
   },
-  deleteAccount: (userId) => api.delete(`/users/${userId}/`)
+  deleteAccount: (userId) => api.delete(`/users/${userId}`)
 };
 
 // Verification & admin actions
@@ -133,20 +128,20 @@ export default api;
 
 // Matching API calls
 export const matchAPI = {
-  createMatch: (requestId) => api.post('/matches/', { request_id: requestId }),
-  getMatches: () => api.get('/matches/'),
-  getMatch: (id) => api.get(`/matches/${id}/`),
-  completeMatch: (id) => api.post(`/matches/${id}/complete/`),
-  cancelMatch: (id, reason) => api.post(`/matches/${id}/cancel/`, { reason }),
-  rateMatch: (id, rating, feedback) => api.post(`/matches/${id}/rate/`, { rating, feedback })
+  createMatch: (requestId) => api.post('/matches', { request_id: requestId }),
+  getMatches: () => api.get('/matches'),
+  getMatch: (id) => api.get(`/matches/${id}`),
+  completeMatch: (id) => api.post(`/matches/${id}/complete`),
+  cancelMatch: (id, reason) => api.post(`/matches/${id}/cancel`, { reason }),
+  rateMatch: (id, rating, feedback) => api.post(`/matches/${id}/rate`, { rating, feedback })
 };
 
 // Messaging API calls
 export const messageAPI = {
-  getMessages: (matchId) => api.get(`/messages/?match_id=${matchId}`),
-  sendMessage: (matchId, content) => api.post('/messages/', { match_id: matchId, content }),
-  markAsRead: (messageId) => api.post(`/messages/${messageId}/mark_read/`),
-  getUnreadCount: () => api.get('/messages/unread_count/')
+  getMessages: (matchId) => api.get('/messages', { params: { match_id: matchId } }),
+  sendMessage: (matchId, content) => api.post('/messages', { match_id: matchId, content }),
+  markAsRead: (messageId) => api.post(`/messages/${messageId}/mark_read`),
+  getUnreadCount: () => api.get('/messages/unread_count')
 };
 
 

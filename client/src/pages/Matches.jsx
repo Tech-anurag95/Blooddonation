@@ -107,20 +107,20 @@ const Matches = () => {
             </div>
           ) : matches.length > 0 ? (
             matches.map(match => (
-              <div key={match.id} className="bg-white rounded-lg shadow-lg p-6">
+              <div key={match._id || match.id} className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   {/* Match Info */}
                   <div className="flex-grow">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-xl font-bold text-gray-900">
-                        {match.donor.username} ↔ {match.request.requester.username}
+                        {(match.donor?.name || match.donor?.username || 'Donor')} ↔ {(match.request?.requester?.name || match.request?.requester?.username || 'Recipient')}
                       </h3>
                       {getStatusBadge(match.status)}
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                       <div>
-                        <span className="font-bold">Blood Type:</span> {match.request.blood_type}
+                        <span className="font-bold">Blood Type:</span> {match.request.bloodType || match.request.blood_type}
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPin size={16} className="text-red-600" />
@@ -150,21 +150,21 @@ const Matches = () => {
                           View Address
                         </button>
                         <button
-                          onClick={() => navigate(`/chat/${match.id}`)}
+                          onClick={() => navigate(`/chat/${match._id || match.id}`)}
                           className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-600 transition"
                         >
                           <MessageCircle size={18} />
                           Chat
                         </button>
                         <button
-                          onClick={() => handleCompleteMatch(match.id)}
+                          onClick={() => handleCompleteMatch(match._id || match.id)}
                           className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition"
                         >
                           <CheckCircle size={18} />
                           Complete
                         </button>
                         <button
-                          onClick={() => handleCancelMatch(match.id)}
+                          onClick={() => handleCancelMatch(match._id || match.id)}
                           className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition"
                         >
                           <XCircle size={18} />

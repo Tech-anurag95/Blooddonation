@@ -34,23 +34,23 @@ const Profile = () => {
         return;
       }
       const response = await userAPI.getProfile();
-      const userData = response.data;
+      // server returns { success, data: { ...user } }
+      const userData = response.data?.data || response.data;
       setFormData({
-        name: userData.username || '',
-        email: userData.email || '',
-        phone: userData.phone || '',
-        bloodType: userData.blood_type || 'O+',
-        city: userData.city || '',
-        state: '',
-        age: userData.age || '',
-        weight: userData.weight || '',
-        lastDonation: userData.last_donation_date || '',
-        available: userData.is_available_to_donate !== false
+        name:         userData.name        || userData.username || '',
+        email:        userData.email       || '',
+        phone:        userData.phone       || '',
+        bloodType:    userData.bloodType   || userData.blood_type || 'O+',
+        city:         userData.city        || '',
+        state:        userData.state       || '',
+        age:          userData.age         || '',
+        weight:       userData.weight      || '',
+        lastDonation: userData.lastDonation || userData.last_donation_date || '',
+        available:    userData.availableToDonate !== false
       });
-      
-      // Set profile picture if exists
-      if (userData.profile_picture) {
-        setProfilePicturePreview(userData.profile_picture);
+
+      if (userData.profilePicture || userData.profile_picture) {
+        setProfilePicturePreview(userData.profilePicture || userData.profile_picture);
       }
     } catch (err) {
       console.error('Profile fetch error:', err);

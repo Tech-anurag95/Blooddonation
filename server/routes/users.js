@@ -18,6 +18,131 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// @route   GET /api/users
+// @desc    Get users with optional filters
+// @access  Public
+router.get('/', async (req, res) => {
+  try {
+    const { role, blood_type, city, verified } = req.query;
+    const filter = {};
+
+    if (role) filter.role = role;
+    if (blood_type) filter.bloodType = blood_type;
+    if (city) filter.city = city;
+    if (verified !== undefined) filter.verified = verified === 'true';
+
+    const users = await User.find(filter).select('-password').sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   GET /api/users/me
+// @desc    Get current logged in user profile
+// @access  Private
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   PUT /api/users/me
+// @desc    Update current logged in user profile
+// @access  Private
+router.put('/me', authMiddleware, async (req, res) => {
+  try {
+    if (req.body.password) {
+      return res.status(400).json({ success: false, message: 'Cannot update password through this endpoint' });
+    }
+
+    const allowedUpdates = ['name', 'email', 'phone', 'bloodType', 'city', 'state', 'age', 'weight', 'lastDonation', 'availableToDonate'];
+    const updates = {};
+    allowedUpdates.forEach(field => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    const user = await User.findByIdAndUpdate(req.userId, updates, { new: true, runValidators: true }).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   PATCH /api/users/me
+// @desc    Update current logged in user profile with multipart/form-data
+// @access  Private
+router.patch('/me', authMiddleware, upload.single('profile_picture'), async (req, res) => {
+  try {
+    if (req.body.password) {
+      return res.status(400).json({ success: false, message: 'Cannot update password through this endpoint' });
+    }
+
+    const updates = {};
+    const profileFields = {
+      username: 'name',
+      name: 'name',
+      email: 'email',
+      phone: 'phone',
+      blood_type: 'bloodType',
+      bloodType: 'bloodType',
+      city: 'city',
+      state: 'state',
+      age: 'age',
+      weight: 'weight',
+      lastDonation: 'lastDonation',
+      availableToDonate: 'availableToDonate'
+    };
+
+    Object.keys(req.body).forEach((field) => {
+      const mapped = profileFields[field] || field;
+      updates[mapped] = req.body[field];
+    });
+
+    if (req.file) {
+      updates.profilePicture = `/uploads/${req.file.filename}`;
+    }
+
+    const user = await User.findByIdAndUpdate(req.userId, updates, { new: true, runValidators: true }).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // @route   GET /api/users/:id
 // @desc    Get user profile
 // @access  Private

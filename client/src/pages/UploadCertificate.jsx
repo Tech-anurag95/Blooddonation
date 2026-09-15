@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, Calendar, Building2, Droplet, FileImage, CheckCircle } from 'lucide-react';
-import { certificateAPI } from '../services/api';
+import { Upload, Calendar, Building2, Droplet, FileImage, CheckCircle, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api.config';
 
 const UploadCertificate = () => {
   const navigate = useNavigate();
@@ -30,30 +30,29 @@ const UploadCertificate = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image file size cannot exceed 5MB');
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size cannot exceed 10MB');
         return;
       }
 
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      // Validate file type — images + PDF
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
-        setError('Only JPEG, PNG, and GIF images are allowed');
+        setError('Only JPEG, PNG, GIF images or PDF files are allowed');
         return;
       }
 
-      setFormData(prev => ({
-        ...prev,
-        certificate_image: file
-      }));
+      setFormData(prev => ({ ...prev, certificate_image: file }));
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      // Show image preview for images, PDF icon for PDFs
+      if (file.type === 'application/pdf') {
+        setImagePreview('pdf');
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => setImagePreview(reader.result);
+        reader.readAsDataURL(file);
+      }
       setError('');
     }
   };
@@ -64,30 +63,35 @@ const UploadCertificate = () => {
     setError('');
 
     try {
-      // Validate required fields
       if (!formData.donation_date || !formData.hospital_name || !formData.certificate_image) {
-        setError('Please fill in all required fields and upload a certificate image');
+        setError('Please fill in all required fields and upload a certificate file');
         setLoading(false);
         return;
       }
 
-      // Create FormData object
-      const data = new FormData();
-      data.append('donation_date', formData.donation_date);
-      data.append('hospital_name', formData.hospital_name);
-      data.append('blood_type', formData.blood_type);
-      data.append('quantity', formData.quantity);
-      data.append('certificate_image', formData.certificate_image);
+      // Upload file to Node.js server
+      const token = localStorage.getItem('token');
+      const data  = new FormData();
+      data.append('donation_date',      formData.donation_date);
+      data.append('hospital_name',      formData.hospital_name);
+      data.append('blood_type',         formData.blood_type);
+      data.append('quantity',           formData.quantity);
+      data.append('certificate_image',  formData.certificate_image);
 
-      await certificateAPI.uploadCertificate(data);
-      
+      const res = await fetch(`${API_BASE_URL}/certificates/upload`, {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body:    data,
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Upload failed');
+
       setSuccess(true);
-      setTimeout(() => {
-        navigate('/rewards');
-      }, 2000);
+      setTimeout(() => navigate('/rewards'), 2000);
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err.response?.data?.detail || err.response?.data?.message || 'Failed to upload certificate');
+      setError(err.message || 'Failed to upload certificate');
     } finally {
       setLoading(false);
     }
@@ -219,19 +223,39 @@ const UploadCertificate = () => {
               <p className="text-sm text-gray-500 mt-2">Standard donation is 450ml</p>
             </div>
 
-            {/* Certificate Image Upload */}
+            {/* Certificate Upload */}
             <div className="group">
               <label className="block text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <FileImage className="w-5 h-5 text-purple-600" />
-                Certificate Image *
+                Certificate File * <span className="text-sm font-normal text-gray-500">(Image or PDF)</span>
               </label>
               
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-500 transition-all">
-                {imagePreview ? (
+                {imagePreview === 'pdf' ? (
                   <div className="space-y-4">
-                    <img 
-                      src={imagePreview} 
-                      alt="Certificate preview" 
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <FileText className="w-16 h-16 text-red-500" />
+                      <p className="font-semibold text-gray-800">{formData.certificate_image?.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {(formData.certificate_image?.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setFormData(prev => ({ ...prev, certificate_image: null }));
+                      }}
+                      className="text-red-600 hover:text-red-700 font-semibold"
+                    >
+                      Remove File
+                    </button>
+                  </div>
+                ) : imagePreview ? (
+                  <div className="space-y-4">
+                    <img
+                      src={imagePreview}
+                      alt="Certificate preview"
                       className="max-h-64 mx-auto rounded-lg shadow-lg"
                     />
                     <button
@@ -249,12 +273,12 @@ const UploadCertificate = () => {
                   <div>
                     <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600 mb-2">Click to upload or drag and drop</p>
-                    <p className="text-sm text-gray-500">JPEG, PNG, or GIF (max 5MB)</p>
+                    <p className="text-sm text-gray-500">JPEG, PNG, GIF or PDF (max 10MB)</p>
                   </div>
                 )}
                 <input
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/gif"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,application/pdf"
                   onChange={handleImageChange}
                   className="hidden"
                   id="certificate-upload"

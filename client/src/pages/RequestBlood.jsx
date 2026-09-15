@@ -79,9 +79,9 @@ const RequestBlood = () => {
         return;
       }
 
-      // Django expects these field names (snake_case)
+      // Send the request fields expected by the backend
       const response = await requestAPI.createRequest({
-        blood_type: formData.bloodType,  // Changed from bloodType
+        bloodType: formData.bloodType,
         quantity: formData.quantity,
         urgency: formData.urgency,
         reason: formData.reason,

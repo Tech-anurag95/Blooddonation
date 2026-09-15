@@ -26,15 +26,24 @@ const Login = ({ onLogin }) => {
       
       if (response.data.success || response.data.token) {
         const token = response.data.token || response.data.access;
-        const user = response.data.user;
-        
+        const user  = response.data.user;
+
         localStorage.setItem('token', token);
-        if (user && user.id) {
-          localStorage.setItem('userId', user.id);
+        if (user?.id || user?._id) {
+          localStorage.setItem('userId', user.id || user._id);
         }
-        localStorage.setItem('userRole', 'user');
-        onLogin(token, 'user');
-        navigate('/blood-requests');
+        const role = user?.role || 'donor';
+        localStorage.setItem('userRole', role);
+        onLogin(token, role);
+
+        // Redirect based on role
+        if (role === 'admin') {
+          navigate('/admin');
+        } else if (role === 'donor') {
+          navigate('/dashboard');
+        } else {
+          navigate('/blood-requests');
+        }
       } else {
         setError('Login failed. Please try again.');
       }
