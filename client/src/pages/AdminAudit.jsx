@@ -25,6 +25,7 @@ const AdminAudit = () => {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchActivities(); }, []);
 
   const handleSearch = (e) => {

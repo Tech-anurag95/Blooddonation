@@ -29,6 +29,7 @@ const FindDonors = () => {
 
   useEffect(() => {
     fetchDonors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBloodType]);
 
   const handleContactDonor = (donorId) => {

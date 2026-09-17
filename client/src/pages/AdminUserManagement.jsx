@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Edit2, Trash2, Eye, Lock, Shield, Plus, ChevronDown, ChevronUp, X, Save } from 'lucide-react';
+import { Users, Search, Edit2, Trash2, Lock, Shield, ChevronDown, ChevronUp, X, Save } from 'lucide-react';
 import api from '../services/api';
 
 const AdminUserManagement = () => {
@@ -20,14 +20,15 @@ const AdminUserManagement = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const BLOOD_TYPES = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
-  const ROLES = ['donor', 'recipient', 'admin'];
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     applyFilters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users, searchTerm, filterRole, filterVerified]);
 
   const fetchUsers = async () => {

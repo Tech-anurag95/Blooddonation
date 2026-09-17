@@ -44,6 +44,7 @@ const Chat = () => {
       document.body.style.width = 'auto';
       document.body.style.height = 'auto';
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
   useEffect(() => {
@@ -125,7 +126,6 @@ const Chat = () => {
     if (!match) return null;
     const currentUser = String(currentUserId);
     const donorId = String(match.donor?.id || match.donor?._id || '');
-    const requesterId = String(match.request?.requester?.id || match.request?.requester?._id || '');
     return donorId === currentUser ? match.request.requester : match.donor;
   };
 
